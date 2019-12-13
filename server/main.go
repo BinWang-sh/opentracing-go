@@ -22,9 +22,10 @@ func GetListProc(w http.ResponseWriter, req *http.Request) {
 	span := tracer.StartSpan("GetListProc", ext.RPCServerOption(spanCtx))
 	defer span.Finish()
 
-	fmt.Println("Get request getList")
+	serialNum := span.BaggageItem("serialno")
+
 	respList := []string{"l1", "l2", "l3", "l4", "l5"}
-	respString := ""
+	respString := serialNum + ":"
 
 	for _, v := range respList {
 		respString += v + ","
@@ -39,6 +40,8 @@ func GetResultProc(w http.ResponseWriter, req *http.Request) {
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
 	span := tracer.StartSpan("GetResultProc", ext.RPCServerOption(spanCtx))
 	defer span.Finish()
+
+	serialNum := span.BaggageItem("serialno")
 
 	keys, ok := req.URL.Query()["num"]
 
@@ -59,7 +62,7 @@ func GetResultProc(w http.ResponseWriter, req *http.Request) {
 		result += i
 	}
 
-	respString := fmt.Sprintf("Result:%d", result)
+	respString := fmt.Sprintf("Result(%s):%d", serialNum, result)
 
 	fmt.Println(respString)
 	io.WriteString(w, respString)

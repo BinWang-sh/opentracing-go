@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	traceconfig "binTest/jaegerTest/CSJaeger/tracelib"
 
@@ -19,6 +21,8 @@ const (
 	URL        = "http://localhost:8080"
 	LIST_API   = "/getList"
 	RESULT_API = "/getResult"
+
+	RANDLETTERCOL = "abcdefghijklmnopqrstuvwxyz0123456789"
 )
 
 var (
@@ -75,6 +79,16 @@ func sendRequest(req *http.Request, ctx context.Context) {
 	}(req)
 }
 
+func randomString(n int) string {
+	r := make([]byte, n)
+	ranSize := len(RANDLETTERCOL)
+	for i := range r {
+		r[i] = RANDLETTERCOL[rand.Intn(ranSize)]
+	}
+
+	return string(r)
+}
+
 func main() {
 
 	if len(os.Args) < 2 {
@@ -88,7 +102,14 @@ func main() {
 
 	span := tracer.StartSpan(fmt.Sprintf("%s trace", os.Args[1]))
 	span.SetTag("trace to", os.Args[1])
+
+	rand.Seed(time.Now().UnixNano())
+	sn := randomString(16)
+	fmt.Printf("serialno:%s\n", sn)
+	span.SetBaggageItem("serialno", sn)
+
 	defer span.Finish()
+
 	ctx := opentracing.ContextWithSpan(context.Background(), span)
 
 	api := ""
@@ -117,9 +138,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	ext.SpanKindRPCClient.Set(reqSpan)
-	ext.HTTPUrl.Set(reqSpan, reqURL)
-	ext.HTTPMethod.Set(reqSpan, "GET")
+	ext.SpanKindRPCClient.Set(span)
+	ext.HTTPUrl.Set(span, reqURL)
+	ext.HTTPMethod.Set(span, "GET")
 	span.Tracer().Inject(
 		span.Context(),
 		opentracing.HTTPHeaders,
