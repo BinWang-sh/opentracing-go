@@ -1,6 +1,6 @@
 An example of using opentracing.
 
-This show how to trace over the process boundaries and RPC calls.
+This example shows how to trace over the process boundaries and RPC calls.
 
 Jaeger start
 
